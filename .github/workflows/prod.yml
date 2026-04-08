@@ -9,8 +9,8 @@ on:
     branches:
       - main
     paths:
-      - 'folder_name/**'
-      - '.github/workflows/prod.yaml'
+      - 'Student_Grade/**'
+      - '.github/workflows/prod.yml'
 
 jobs:
   deploy:
@@ -22,7 +22,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: folder_name
+        working-directory: Student_Grade
 
     steps:
       # -----------------------------
@@ -60,8 +60,8 @@ jobs:
       # -----------------------------
       # Run jobs / pipelines (optional)
       # -----------------------------
-      - name: Run bundle jobs
-        run: databricks bundle run --target prod
+      - name: Run bundle pipeline
+        run: databricks bundle run Student_Grade_etl --target prod
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
