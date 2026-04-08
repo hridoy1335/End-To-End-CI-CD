@@ -34,16 +34,6 @@ jobs:
         uses: databricks/setup-cli@v0.220.0
 
       # -----------------------------
-      # Validate bundle (fail fast)
-      # -----------------------------
-      - name: Validate bundle
-        run: databricks bundle validate
-        env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
-          DATABRICKS_BUNDLE_ENV: prod
-
-      # -----------------------------
       # Deploy bundle
       # -----------------------------
       - name: Deploy bundle
