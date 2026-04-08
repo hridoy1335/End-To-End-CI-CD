@@ -1,0 +1,77 @@
+name: prod deployment
+
+concurrency:
+  group: databricks-prod-deploy
+  cancel-in-progress: false
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'folder_name/**'
+      - '.github/workflows/prod.yaml'
+
+jobs:
+  deploy:
+    name: deploy to production
+    runs-on: ubuntu-latest
+
+    environment:
+      name: prod
+
+    defaults:
+      run:
+        working-directory: folder_name
+
+    steps:
+      # -----------------------------
+      # Checkout code
+      # -----------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -----------------------------
+      # Setup Databricks CLI
+      # -----------------------------
+      - name: Setup Databricks CLI
+        uses: databricks/setup-cli@v0.220.0
+
+      # -----------------------------
+      # Validate bundle (fail fast)
+      # -----------------------------
+      - name: Validate bundle
+        run: databricks bundle validate
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          DATABRICKS_BUNDLE_ENV: prod
+
+      # -----------------------------
+      # Deploy bundle
+      # -----------------------------
+      - name: Deploy bundle
+        run: databricks bundle deploy --target prod
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          DATABRICKS_BUNDLE_ENV: prod
+
+      # -----------------------------
+      # Run jobs / pipelines (optional)
+      # -----------------------------
+      - name: Run bundle jobs
+        run: databricks bundle run --target prod
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          DATABRICKS_BUNDLE_ENV: prod
+
+      # -----------------------------
+      # Post-deploy verification (optional)
+      # -----------------------------
+      - name: Verify deployment
+        run: databricks bundle summary --target prod
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
