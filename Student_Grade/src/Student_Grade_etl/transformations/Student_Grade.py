@@ -10,8 +10,7 @@ from pyspark.sql.types import *
 
 @dp.table(
     name="Student_Grade",
-    comment="student grade analytics data engineer project",
-    table_properties={"pipelines.autoOptimize.managed": "true", "quality": "bronze"}
+    comment="student grade analytics data engineer project"
 )
 def Student_Grade():
     # Read from the "sample_trips" table, then sum all the fares
@@ -19,4 +18,26 @@ def Student_Grade():
         spark.readStream.table("workspace.oltp.student_grade")
         .withColumn("id", monotonically_increasing_id())
         .withColumn("created_at", current_timestamp())
+    )
+
+@dp.materialized_view()
+def silver():
+    return (
+        spark.readStream.table("LIVE.Student_Grade")
+             .dropDuplicates(["id"])
+             .withColumn("updated_at", current_timestamp())
+    )
+
+@dp.materialized_view()
+def gold():
+    return (
+        spark.readStream.table("LIVE.silver")
+        .groupBy("id")
+        .agg(
+            sum("grade").alias("total_grade"),
+            count("grade").alias("total_count"),
+            avg("grade").alias("avg_grade"),
+            max("grade").alias("max_grade"),
+            min("grade").alias("min_grade"),
+        )
     )
