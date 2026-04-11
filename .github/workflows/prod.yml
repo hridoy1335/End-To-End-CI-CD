@@ -1,44 +1,35 @@
-name: prod deployment
+name: production deployment
 
 on:
   push:
     branches:
       - main
-    paths:
-      - 'Student_Grade/**'
-      - '.github/workflows/prod.yml'
+
+concurrency: 1
 
 jobs:
   deploy:
-    name: deploy to production
     runs-on: ubuntu-latest
 
-    environment:
-      name: prod
-
-    defaults:
-      run:
-        working-directory: Student_Grade
-
     steps:
-      # -----------------------------
-      # Checkout code
-      # -----------------------------
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      # -----------------------------
-      # Setup Databricks CLI
-      # -----------------------------
       - name: Setup Databricks CLI
-        uses: databricks/setup-cli@v0.220.0
+        run: |
+          pip install databricks-cli
 
-      # -----------------------------
-      # Deploy bundle
-      # -----------------------------
-      - name: Deploy bundle
-        run: databricks bundle deploy --target prod
+      - name: Configure Databricks
+        run: |
+          databricks configure --token
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
-          DATABRICKS_BUNDLE_ENV: prod
+
+      - name: Deploy to Databricks
+        run: |
+          databricks bundle deploy
+
+      - name: Run Job
+        run: |
+          databricks bundle run
