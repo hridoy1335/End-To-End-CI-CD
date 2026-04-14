@@ -1,66 +1,86 @@
-name: CICD Pipeline                                  # Pipeline Name to Specify pipeline
+name: Databricks CI/CD Pipeline
 
 on:
   push:
     branches:
-      - main                                           # Trigger the pipeline on push to main branch
+      - main
 
-jobs:                                                  # Define the jobs (dev ------------> prod)
-  deploy-dev:                                          # Development Environment Configuration
-    runs-on: ubuntu-latest                             # Project run on Ubuntu machine
-    steps:                                             # Define the Steps
-      - name: Checkout code                            # step-1: Checkout the code
-        uses: actions/checkout@v3
+jobs:
 
-      - name: Set up Python                            # step-2: Setting up Python environment
-        uses: actions/setup-python@v3
+# =========================
+# DEV DEPLOYMENT
+# =========================
+  deploy-dev:
+    name: Deploy to DEV
+    runs-on: ubuntu-latest
+    environment: dev
+
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_DEV }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_DEV }}
+      WORKSPACE_PATH: "/Workspace/Users/rkhridoyinfo@gmail.com/Student_Development_Pipeline"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.13'                       # Install python 3.13
+          python-version: "3.10"
 
-      - name: Install Databricks CLI                   # step-3: Installing databricks CLI
+      - name: Install Databricks CLI
+        run: pip install databricks-cli
+
+      # ✅ NON-INTERACTIVE AUTH (BEST PRACTICE)
+      - name: Configure Databricks CLI
         run: |
-          pip install databricks-cli
+          mkdir -p ~/.databricks
+          echo "[DEFAULT]" > ~/.databrickscfg
+          echo "host = $DATABRICKS_HOST" >> ~/.databrickscfg
+          echo "token = $DATABRICKS_TOKEN" >> ~/.databrickscfg
 
-      - name: Authenticate With Databricks             # step-4: Authenticate with Databricks using token
-        env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_DEV }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_DEV }}
+      - name: Deploy notebooks to DEV
         run: |
-          databricks configure --token <<EOF
-          $DATABRICKS_HOST
-          $DATABRICKS_TOKEN
-          EOF
+          databricks workspace import_dir ./Workspace "$WORKSPACE_PATH" --overwrite
 
-      - name: Deploy Notebooks To DEV                  # step-5: Deploy notebooks to DEV workspace
-        run: |
-          databricks workspace import_dir /Workspace/Users/rkhridoyinfo@gmail.com/Student_Development_Pipeline --overwrite
 
-  deploy-prod:                                         # Production Environment Configuration
-    runs-on: ubuntu-latest                             # Project run on Ubuntu machine
-    needs: deploy-dev                                  # Only run after dev deployment succeeds
-    steps:                                             # Define the Steps
-      - name: Checkout code                            # step-1: Checkout the code
-        uses: actions/checkout@v3
+# =========================
+# PROD DEPLOYMENT
+# =========================
+  deploy-prod:
+    name: Deploy to PROD
+    needs: deploy-dev
+    runs-on: ubuntu-latest
 
-      - name: Set up Python                            # step-2: Setting up Python environment
-        uses: actions/setup-python@v3
+    # 🔥 IMPORTANT: Enable approval in GitHub settings
+    environment:
+      name: prod
+
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_PROD }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD }}
+      WORKSPACE_PATH: "/Workspace/Users/rkhridoyinfo@gmail.com/Student_Production_Pipeline"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.13'                       # Install python 3.13
+          python-version: "3.10"
 
-      - name: Install Databricks CLI                   # step-3: Installing databricks CLI
-        run: |
-          pip install databricks-cli
+      - name: Install Databricks CLI
+        run: pip install databricks-cli
 
-      - name: Authenticate With Databricks             # step-4: Authenticate with Databricks using token
-        env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_PROD }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD }}
+      - name: Configure Databricks CLI
         run: |
-          databricks configure --token <<EOF
-          $DATABRICKS_HOST
-          $DATABRICKS_TOKEN
-          EOF
+          mkdir -p ~/.databricks
+          echo "[DEFAULT]" > ~/.databrickscfg
+          echo "host = $DATABRICKS_HOST" >> ~/.databrickscfg
+          echo "token = $DATABRICKS_TOKEN" >> ~/.databrickscfg
 
-      - name: Deploy Notebooks To PROD                 # step-5: Deploy notebooks to PROD workspace
+      - name: Deploy notebooks to PROD
         run: |
-          databricks workspace import_dir /Workspace/Users/rkhridoyinfo@gmail.com/Student_Production_Pipeline --overwrite
+          databricks workspace import_dir ./Workspace "$WORKSPACE_PATH" --overwrite
