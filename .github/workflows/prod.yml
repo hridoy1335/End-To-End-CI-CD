@@ -33,7 +33,7 @@ jobs:                                                  # Define the jobs (dev --
 
       - name: Deploy Notebooks To DEV                  # step-5: Deploy notebooks to DEV workspace
         run: |
-          databricks workspace import_dir ./notebooks /Shared/dev-notebooks --overwrite
+          databricks workspace import_dir /Workspace/Users/rkhridoyinfo@gmail.com/Student_Development_Pipeline --overwrite
 
   deploy-prod:                                         # Production Environment Configuration
     runs-on: ubuntu-latest                             # Project run on Ubuntu machine
@@ -63,4 +63,4 @@ jobs:                                                  # Define the jobs (dev --
 
       - name: Deploy Notebooks To PROD                 # step-5: Deploy notebooks to PROD workspace
         run: |
-          databricks workspace import_dir ./notebooks /Shared/prod-notebooks --overwrite
+          databricks workspace import_dir /Workspace/Users/rkhridoyinfo@gmail.com/Student_Production_Pipeline --overwrite
