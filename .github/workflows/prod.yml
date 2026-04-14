@@ -18,7 +18,7 @@ jobs:
     env:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_DEV }}
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_DEV }}
-      WORKSPACE_PATH: "/Workspace/Users/rkhridoyinfo@gmail.com/Student_Development_Pipeline"
+      WORKSPACE_PATH: "/Shared/Student_Development_Pipeline"
 
     steps:
       - name: Checkout code
@@ -60,7 +60,7 @@ jobs:
     env:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_PROD }}
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD }}
-      WORKSPACE_PATH: "/Workspace/Users/rkhridoyinfo@gmail.com/Student_Production_Pipeline"
+      WORKSPACE_PATH: "/Shared/Student_Production_Pipeline"
 
     steps:
       - name: Checkout code
