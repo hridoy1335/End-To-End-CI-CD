@@ -1,35 +1,66 @@
-name: production deployment
+name: CICD Pipeline                                  # Pipeline Name to Specify pipeline
 
 on:
   push:
     branches:
-      - main
+      - main                                           # Trigger the pipeline on push to main branch
 
-concurrency: 1
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
+jobs:                                                  # Define the jobs (dev ------------> prod)
+  deploy-dev:                                          # Development Environment Configuration
+    runs-on: ubuntu-latest                             # Project run on Ubuntu machine
+    steps:                                             # Define the Steps
+      - name: Checkout code                            # step-1: Checkout the code
         uses: actions/checkout@v3
 
-      - name: Setup Databricks CLI
+      - name: Set up Python                            # step-2: Setting up Python environment
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.13'                       # Install python 3.13
+
+      - name: Install Databricks CLI                   # step-3: Installing databricks CLI
         run: |
           pip install databricks-cli
 
-      - name: Configure Databricks
-        run: |
-          databricks configure --token
+      - name: Authenticate With Databricks             # step-4: Authenticate with Databricks using token
         env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
-
-      - name: Deploy to Databricks
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_DEV }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_DEV }}
         run: |
-          databricks bundle deploy
+          databricks configure --token <<EOF
+          $DATABRICKS_HOST
+          $DATABRICKS_TOKEN
+          EOF
 
-      - name: Run Job
+      - name: Deploy Notebooks To DEV                  # step-5: Deploy notebooks to DEV workspace
         run: |
-          databricks bundle run
+          databricks workspace import_dir ./notebooks /Shared/dev-notebooks --overwrite
+
+  deploy-prod:                                         # Production Environment Configuration
+    runs-on: ubuntu-latest                             # Project run on Ubuntu machine
+    needs: deploy-dev                                  # Only run after dev deployment succeeds
+    steps:                                             # Define the Steps
+      - name: Checkout code                            # step-1: Checkout the code
+        uses: actions/checkout@v3
+
+      - name: Set up Python                            # step-2: Setting up Python environment
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.13'                       # Install python 3.13
+
+      - name: Install Databricks CLI                   # step-3: Installing databricks CLI
+        run: |
+          pip install databricks-cli
+
+      - name: Authenticate With Databricks             # step-4: Authenticate with Databricks using token
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_PROD }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD }}
+        run: |
+          databricks configure --token <<EOF
+          $DATABRICKS_HOST
+          $DATABRICKS_TOKEN
+          EOF
+
+      - name: Deploy Notebooks To PROD                 # step-5: Deploy notebooks to PROD workspace
+        run: |
+          databricks workspace import_dir ./notebooks /Shared/prod-notebooks --overwrite
