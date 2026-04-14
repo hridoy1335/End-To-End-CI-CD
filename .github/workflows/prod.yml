@@ -18,7 +18,7 @@ jobs:
     env:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_DEV }}
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_DEV }}
-      WORKSPACE_PATH: "/Shared/Student_Development_Pipeline"
+      WORKSPACE_PATH: "/Users/rkhridoyinfo@gmail.com/Student_Development_Pipeline"
 
     steps:
       - name: Checkout code
@@ -32,7 +32,7 @@ jobs:
       - name: Install Databricks CLI
         run: pip install databricks-cli
 
-      # ✅ NON-INTERACTIVE AUTH (BEST PRACTICE)
+      # ✅ Configure CLI (non-interactive)
       - name: Configure Databricks CLI
         run: |
           mkdir -p ~/.databricks
@@ -40,6 +40,12 @@ jobs:
           echo "host = $DATABRICKS_HOST" >> ~/.databrickscfg
           echo "token = $DATABRICKS_TOKEN" >> ~/.databrickscfg
 
+      # ✅ Create folder if not exists (IMPORTANT)
+      - name: Create workspace directory
+        run: |
+          databricks workspace mkdirs "$WORKSPACE_PATH"
+
+      # ✅ Deploy notebooks
       - name: Deploy notebooks to DEV
         run: |
           databricks workspace import_dir ./Workspace "$WORKSPACE_PATH" --overwrite
@@ -53,14 +59,13 @@ jobs:
     needs: deploy-dev
     runs-on: ubuntu-latest
 
-    # 🔥 IMPORTANT: Enable approval in GitHub settings
     environment:
       name: prod
 
     env:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_PROD }}
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD }}
-      WORKSPACE_PATH: "/Shared/Student_Production_Pipeline"
+      WORKSPACE_PATH: "/Users/rkhridoyinfo@gmail.com/Student_Production_Pipeline"
 
     steps:
       - name: Checkout code
@@ -80,6 +85,10 @@ jobs:
           echo "[DEFAULT]" > ~/.databrickscfg
           echo "host = $DATABRICKS_HOST" >> ~/.databrickscfg
           echo "token = $DATABRICKS_TOKEN" >> ~/.databrickscfg
+
+      - name: Create workspace directory
+        run: |
+          databricks workspace mkdirs "$WORKSPACE_PATH"
 
       - name: Deploy notebooks to PROD
         run: |
